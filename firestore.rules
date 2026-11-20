@@ -1,0 +1,348 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Connection check document
+    match /test/connection {
+      allow get: if true;
+    }
+
+    // Core helper primitives
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedEmail() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      return isVerifiedEmail() && (
+        request.auth.token.email == 'jabirsoloka560@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    // Validation Blueprints
+    function isValidCampaign(data) {
+      return data.keys().hasAll(['name', 'topic', 'isActive', 'isDefault', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['name', 'topic', 'description', 'assignedEbookId', 'isActive', 'isDefault', 'createdAt', 'updatedAt'])
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 160
+        && data.topic is string && data.topic.size() >= 1 && data.topic.size() <= 200
+        && (!('description' in data) || (data.description is string && data.description.size() <= 1000))
+        && (!('assignedEbookId' in data) || (data.assignedEbookId is string && data.assignedEbookId.size() <= 128))
+        && data.isActive is bool
+        && data.isDefault is bool
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidSlide(data) {
+      return data.keys().hasAll(['campaignId', 'section', 'order', 'title', 'description', 'isActive', 'updatedAt'])
+        && data.keys().hasOnly(['campaignId', 'section', 'order', 'title', 'description', 'imageUrl', 'illustrationKey', 'isActive', 'updatedAt'])
+        && isValidId(data.campaignId)
+        && data.section is string && data.section in ['VIDONDA_VYA_TUMBO', 'ACID_REFLUX', 'JUMLA']
+        && data.order is number && data.order >= 0 && data.order <= 500
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 200
+        && data.description is string && data.description.size() >= 1 && data.description.size() <= 2500
+        && (!('imageUrl' in data) || (data.imageUrl is string && data.imageUrl.size() <= 1000))
+        && (!('illustrationKey' in data) || (data.illustrationKey is string && data.illustrationKey.size() <= 64))
+        && data.isActive is bool
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidEbook(data) {
+      return data.keys().hasAll(['title', 'category', 'pdfUrl', 'fileName', 'fileSize', 'storageProvider', 'isActive', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['title', 'description', 'category', 'coverUrl', 'pdfUrl', 'fileName', 'fileSize', 'storageProvider', 'isActive', 'createdAt', 'updatedAt'])
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 200
+        && (!('description' in data) || (data.description is string && data.description.size() <= 1500))
+        && data.category is string && data.category.size() >= 1 && data.category.size() <= 100
+        && (!('coverUrl' in data) || (data.coverUrl is string && data.coverUrl.size() <= 1000))
+        && data.pdfUrl is string && data.pdfUrl.size() >= 1 && data.pdfUrl.size() <= 1000
+        && data.fileName is string && data.fileName.size() >= 1 && data.fileName.size() <= 255
+        && data.fileSize is number && data.fileSize >= 0 && data.fileSize <= 104857600
+        && data.storageProvider is string && data.storageProvider in ['server', 'firebase_storage']
+        && data.isActive is bool
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidLead(data) {
+      return data.keys().hasAll([
+          'sessionId', 'campaignId', 'fullName', 'phone', 'consentGiven',
+          'currentStep', 'educationCompleted', 'assessmentCompleted',
+          'contactDownloaded', 'contactConfirmed', 'whatsappClicked',
+          'communityConfirmed', 'ebookUnlocked', 'ebookOpened', 'ebookDownloaded',
+          'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'sessionId', 'campaignId', 'fullName', 'phone', 'location', 'consentGiven',
+          'currentStep', 'educationCompleted', 'assessmentCompleted',
+          'contactDownloaded', 'contactConfirmed', 'whatsappClicked',
+          'communityConfirmed', 'ebookUnlocked', 'ebookOpened', 'ebookDownloaded',
+          'assignedEbookId', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.sessionId) && data.sessionId.size() >= 8
+        && isValidId(data.campaignId)
+        && data.fullName is string && data.fullName.size() >= 2 && data.fullName.size() <= 160
+        && data.phone is string && data.phone.size() >= 6 && data.phone.size() <= 40
+        && (!('location' in data) || (data.location is string && data.location.size() <= 160))
+        && data.consentGiven is bool && data.consentGiven == true
+        && data.currentStep is number && data.currentStep >= 1 && data.currentStep <= 6
+        && data.educationCompleted is bool
+        && data.assessmentCompleted is bool
+        && data.contactDownloaded is bool
+        && data.contactConfirmed is bool
+        && data.whatsappClicked is bool
+        && data.communityConfirmed is bool
+        && data.ebookUnlocked is bool
+        && data.ebookOpened is bool
+        && data.ebookDownloaded is bool
+        && (!('assignedEbookId' in data) || (data.assignedEbookId is string && data.assignedEbookId.size() <= 128))
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidAssessment(data) {
+      return data.keys().hasAll([
+          'leadId', 'campaignId', 'upperAbdominalDiscomfort', 'heartburn',
+          'acidRegurgitation', 'symptomFrequency', 'symptomDuration',
+          'priorMedicalAssessment', 'wantsMoreEducation', 'hasWarningSigns',
+          'consentGiven', 'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'leadId', 'campaignId', 'upperAbdominalDiscomfort', 'heartburn',
+          'acidRegurgitation', 'symptomFrequency', 'symptomDuration',
+          'priorMedicalAssessment', 'wantsMoreEducation', 'hasWarningSigns',
+          'consentGiven', 'createdAt'
+        ])
+        && isValidId(data.leadId) && data.leadId.size() >= 8
+        && isValidId(data.campaignId)
+        && data.upperAbdominalDiscomfort is string && data.upperAbdominalDiscomfort.size() >= 1 && data.upperAbdominalDiscomfort.size() <= 64
+        && data.heartburn is string && data.heartburn.size() >= 1 && data.heartburn.size() <= 64
+        && data.acidRegurgitation is string && data.acidRegurgitation.size() >= 1 && data.acidRegurgitation.size() <= 64
+        && data.symptomFrequency is string && data.symptomFrequency.size() >= 1 && data.symptomFrequency.size() <= 64
+        && data.symptomDuration is string && data.symptomDuration.size() >= 1 && data.symptomDuration.size() <= 64
+        && data.priorMedicalAssessment is string && data.priorMedicalAssessment.size() >= 1 && data.priorMedicalAssessment.size() <= 64
+        && data.wantsMoreEducation is string && data.wantsMoreEducation.size() >= 1 && data.wantsMoreEducation.size() <= 64
+        && data.hasWarningSigns is bool
+        && data.consentGiven is bool && data.consentGiven == true
+        && data.createdAt is timestamp;
+    }
+
+    function isValidFunnelEvent(data) {
+      return data.keys().hasAll(['sessionId', 'campaignId', 'eventType', 'consentGranted', 'createdAt'])
+        && data.keys().hasOnly(['sessionId', 'campaignId', 'eventType', 'ebookId', 'consentGranted', 'createdAt'])
+        && isValidId(data.sessionId) && data.sessionId.size() >= 8
+        && isValidId(data.campaignId)
+        && data.eventType is string && data.eventType in [
+          'landing_page_viewed',
+          'welcome_started',
+          'education_started',
+          'education_completed',
+          'assessment_started',
+          'assessment_completed',
+          'contact_card_downloaded',
+          'contact_save_confirmed',
+          'whatsapp_invitation_clicked',
+          'community_join_confirmed',
+          'ebook_unlocked',
+          'ebook_opened',
+          'ebook_downloaded'
+        ]
+        && (!('ebookId' in data) || (data.ebookId is string && data.ebookId.size() <= 128))
+        && data.consentGranted is bool
+        && data.createdAt is timestamp;
+    }
+
+    function isValidPublicSettings(data) {
+      return data.keys().hasAll([
+          'brandName', 'presenterName', 'contactName', 'contactPhone',
+          'contactPhoneIntl', 'whatsappNumber', 'contactOrganization',
+          'communityName', 'communityMessage', 'whatsappCommunityLink', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'brandName', 'presenterName', 'contactName', 'contactPhone',
+          'contactPhoneIntl', 'whatsappNumber', 'contactOrganization', 'contactNote',
+          'communityName', 'communityMessage', 'whatsappCommunityLink', 'metaPixelId',
+          'logoUrl', 'welcomeImageUrl', 'updatedAt'
+        ])
+        && data.brandName is string && data.brandName.size() >= 1 && data.brandName.size() <= 120
+        && data.presenterName is string && data.presenterName.size() >= 1 && data.presenterName.size() <= 120
+        && data.contactName is string && data.contactName.size() >= 1 && data.contactName.size() <= 160
+        && data.contactPhone is string && data.contactPhone.size() >= 1 && data.contactPhone.size() <= 40
+        && data.contactPhoneIntl is string && data.contactPhoneIntl.size() >= 1 && data.contactPhoneIntl.size() <= 40
+        && data.whatsappNumber is string && data.whatsappNumber.size() >= 1 && data.whatsappNumber.size() <= 40
+        && data.contactOrganization is string && data.contactOrganization.size() >= 1 && data.contactOrganization.size() <= 160
+        && (!('contactNote' in data) || (data.contactNote is string && data.contactNote.size() <= 500))
+        && data.communityName is string && data.communityName.size() >= 1 && data.communityName.size() <= 160
+        && data.communityMessage is string && data.communityMessage.size() >= 1 && data.communityMessage.size() <= 1000
+        && data.whatsappCommunityLink is string && data.whatsappCommunityLink.size() >= 1 && data.whatsappCommunityLink.size() <= 500
+        && (!('metaPixelId' in data) || (data.metaPixelId is string && data.metaPixelId.size() <= 64))
+        && (!('logoUrl' in data) || (data.logoUrl is string && data.logoUrl.size() <= 1000))
+        && (!('welcomeImageUrl' in data) || (data.welcomeImageUrl is string && data.welcomeImageUrl.size() <= 1000))
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidAdminUser(data) {
+      return data.keys().hasAll(['email', 'role', 'createdAt'])
+        && data.keys().hasOnly(['email', 'role', 'createdAt'])
+        && data.email is string && data.email.size() >= 3 && data.email.size() <= 200
+        && data.role is string && data.role in ['admin', 'super_admin']
+        && data.createdAt is timestamp;
+    }
+
+    // Campaigns: public can read active campaigns; admin has full CRUD
+    match /campaigns/{campaignId} {
+      allow get: if isValidId(campaignId) && (existing().isActive == true || isAdmin());
+      allow list: if resource.data.isActive == true || isAdmin();
+      allow create: if isAdmin() && isValidId(campaignId) && isValidCampaign(incoming())
+        && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+      allow update: if isAdmin() && isValidId(campaignId) && isValidCampaign(incoming())
+        && incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'topic', 'description', 'assignedEbookId', 'isActive', 'isDefault', 'updatedAt']);
+      allow delete: if isAdmin() && isValidId(campaignId);
+    }
+
+    // Slides: public can read active slides; admin has full CRUD
+    match /slides/{slideId} {
+      allow get: if isValidId(slideId) && (existing().isActive == true || isAdmin());
+      allow list: if resource.data.isActive == true || isAdmin();
+      allow create: if isAdmin() && isValidId(slideId) && isValidSlide(incoming())
+        && incoming().updatedAt == request.time
+        && (
+          exists(/databases/$(database)/documents/campaigns/$(incoming().campaignId)) ||
+          existsAfter(/databases/$(database)/documents/campaigns/$(incoming().campaignId))
+        );
+      allow update: if isAdmin() && isValidId(slideId) && isValidSlide(incoming())
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['campaignId', 'section', 'order', 'title', 'description', 'imageUrl', 'illustrationKey', 'isActive', 'updatedAt']);
+      allow delete: if isAdmin() && isValidId(slideId);
+    }
+
+    // eBooks: public can read active eBooks; admin has full CRUD
+    match /ebooks/{ebookId} {
+      allow get: if isValidId(ebookId) && (existing().isActive == true || isAdmin());
+      allow list: if resource.data.isActive == true || isAdmin();
+      allow create: if isAdmin() && isValidId(ebookId) && isValidEbook(incoming())
+        && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+      allow update: if isAdmin() && isValidId(ebookId) && isValidEbook(incoming())
+        && incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['title', 'description', 'category', 'coverUrl', 'pdfUrl', 'fileName', 'fileSize', 'storageProvider', 'isActive', 'updatedAt']);
+      allow delete: if isAdmin() && isValidId(ebookId);
+    }
+
+    // Leads: STRICT PII ISOLATION — only admins can read/list/delete; visitors create & advance their own step flags
+    match /leads/{leadId} {
+      allow get: if isAdmin() && isValidId(leadId);
+      allow list: if isAdmin();
+      allow create: if isValidId(leadId) && leadId == incoming().sessionId && isValidLead(incoming())
+        && incoming().createdAt == request.time && incoming().updatedAt == request.time
+        && (incoming().campaignId == 'vidonda_acid_reflux_01' || exists(/databases/$(database)/documents/campaigns/$(incoming().campaignId)));
+      allow update: if isValidId(leadId) && isValidLead(incoming()) && (
+        (
+          isAdmin()
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'fullName', 'phone', 'location', 'consentGiven', 'currentStep',
+            'educationCompleted', 'assessmentCompleted', 'contactDownloaded',
+            'contactConfirmed', 'whatsappClicked', 'communityConfirmed',
+            'ebookUnlocked', 'ebookOpened', 'ebookDownloaded', 'assignedEbookId', 'updatedAt'
+          ])
+        ) || (
+          incoming().sessionId == existing().sessionId
+          && incoming().campaignId == existing().campaignId
+          && incoming().fullName == existing().fullName
+          && incoming().phone == existing().phone
+          && incoming().consentGiven == existing().consentGiven
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && (!('location' in existing()) ? !('location' in incoming()) : ('location' in incoming() && incoming().location == existing().location))
+          && incoming().currentStep >= existing().currentStep
+          && (existing().contactDownloaded == false || incoming().contactDownloaded == true)
+          && (existing().contactConfirmed == false || incoming().contactConfirmed == true)
+          && (existing().whatsappClicked == false || incoming().whatsappClicked == true)
+          && (existing().communityConfirmed == false || incoming().communityConfirmed == true)
+          && (existing().ebookUnlocked == false || incoming().ebookUnlocked == true)
+          && (existing().ebookOpened == false || incoming().ebookOpened == true)
+          && (existing().ebookDownloaded == false || incoming().ebookDownloaded == true)
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'currentStep', 'contactDownloaded', 'contactConfirmed',
+            'whatsappClicked', 'communityConfirmed', 'ebookUnlocked',
+            'ebookOpened', 'ebookDownloaded', 'assignedEbookId', 'updatedAt'
+          ])
+        )
+      );
+      allow delete: if isAdmin() && isValidId(leadId);
+    }
+
+    // Assessments: STRICT PII ISOLATION — visitors create once per sessionId; admin reads/deletes
+    match /assessments/{assessmentId} {
+      allow get: if isAdmin() && isValidId(assessmentId);
+      allow list: if isAdmin();
+      allow create: if isValidId(assessmentId) && assessmentId == incoming().leadId && isValidAssessment(incoming())
+        && incoming().createdAt == request.time
+        && (incoming().campaignId == 'vidonda_acid_reflux_01' || exists(/databases/$(database)/documents/campaigns/$(incoming().campaignId)));
+      allow update: if false;
+      allow delete: if isAdmin() && isValidId(assessmentId);
+    }
+
+    // Funnel events: append-only analytics; admin-only reads
+    match /funnel_events/{eventId} {
+      allow get: if isAdmin() && isValidId(eventId);
+      allow list: if isAdmin();
+      allow create: if isValidId(eventId) && isValidFunnelEvent(incoming())
+        && incoming().createdAt == request.time
+        && (incoming().campaignId == 'vidonda_acid_reflux_01' || exists(/databases/$(database)/documents/campaigns/$(incoming().campaignId)));
+      allow update: if false;
+      allow delete: if isAdmin() && isValidId(eventId);
+    }
+
+    // Settings: public_config is readable publicly; all writes require admin
+    match /settings/{settingId} {
+      allow get: if isValidId(settingId) && (settingId == 'public_config' || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isAdmin() && isValidId(settingId) && isValidPublicSettings(incoming())
+        && incoming().updatedAt == request.time;
+      allow update: if isAdmin() && isValidId(settingId) && isValidPublicSettings(incoming())
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'brandName', 'presenterName', 'contactName', 'contactPhone',
+          'contactPhoneIntl', 'whatsappNumber', 'contactOrganization', 'contactNote',
+          'communityName', 'communityMessage', 'whatsappCommunityLink', 'metaPixelId',
+          'logoUrl', 'welcomeImageUrl', 'updatedAt'
+        ]);
+      allow delete: if false;
+    }
+
+    // Admins registry
+    match /admins/{adminId} {
+      allow get: if isAdmin() && isValidId(adminId);
+      allow list: if isAdmin();
+      allow create: if isAdmin() && isValidId(adminId) && isValidAdminUser(incoming())
+        && incoming().createdAt == request.time;
+      allow update: if isAdmin() && isValidId(adminId) && isValidAdminUser(incoming())
+        && incoming().createdAt == existing().createdAt
+        && incoming().diff(existing()).affectedKeys().hasOnly(['email', 'role']);
+      allow delete: if isAdmin() && isValidId(adminId) && adminId != request.auth.uid;
+    }
+  }
+}

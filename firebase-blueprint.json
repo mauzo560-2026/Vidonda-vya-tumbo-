@@ -1,0 +1,217 @@
+{
+  "entities": {
+    "Campaign": {
+      "title": "Campaign",
+      "description": "An educational funnel campaign linking educational slides and an assigned eBook.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "topic": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "description": { "type": "string", "maxLength": 1000 },
+        "assignedEbookId": { "type": "string", "maxLength": 128 },
+        "isActive": { "type": "boolean" },
+        "isDefault": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "topic", "isActive", "isDefault", "createdAt", "updatedAt"]
+    },
+    "EducationalSlide": {
+      "title": "EducationalSlide",
+      "description": "A single educational slide inside the Step 2 interactive carousel.",
+      "type": "object",
+      "properties": {
+        "campaignId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "section": { "type": "string", "enum": ["VIDONDA_VYA_TUMBO", "ACID_REFLUX", "JUMLA"] },
+        "order": { "type": "number" },
+        "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "description": { "type": "string", "minLength": 1, "maxLength": 2500 },
+        "imageUrl": { "type": "string", "maxLength": 1000 },
+        "illustrationKey": { "type": "string", "maxLength": 64 },
+        "isActive": { "type": "boolean" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["campaignId", "section", "order", "title", "description", "isActive", "updatedAt"]
+    },
+    "Ebook": {
+      "title": "Ebook",
+      "description": "A downloadable educational PDF eBook managed by the administrator.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "description": { "type": "string", "maxLength": 1500 },
+        "category": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "coverUrl": { "type": "string", "maxLength": 1000 },
+        "pdfUrl": { "type": "string", "minLength": 1, "maxLength": 1000 },
+        "fileName": { "type": "string", "minLength": 1, "maxLength": 255 },
+        "fileSize": { "type": "number" },
+        "storageProvider": { "type": "string", "enum": ["server", "firebase_storage"] },
+        "isActive": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "category", "pdfUrl", "fileName", "fileSize", "storageProvider", "isActive", "createdAt", "updatedAt"]
+    },
+    "Lead": {
+      "title": "Lead",
+      "description": "A visitor lead record with consent and step-by-step funnel progression.",
+      "type": "object",
+      "properties": {
+        "sessionId": { "type": "string", "minLength": 8, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "campaignId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "fullName": { "type": "string", "minLength": 2, "maxLength": 160 },
+        "phone": { "type": "string", "minLength": 6, "maxLength": 40 },
+        "location": { "type": "string", "maxLength": 160 },
+        "consentGiven": { "type": "boolean" },
+        "currentStep": { "type": "number" },
+        "educationCompleted": { "type": "boolean" },
+        "assessmentCompleted": { "type": "boolean" },
+        "contactDownloaded": { "type": "boolean" },
+        "contactConfirmed": { "type": "boolean" },
+        "whatsappClicked": { "type": "boolean" },
+        "communityConfirmed": { "type": "boolean" },
+        "ebookUnlocked": { "type": "boolean" },
+        "ebookOpened": { "type": "boolean" },
+        "ebookDownloaded": { "type": "boolean" },
+        "assignedEbookId": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "sessionId", "campaignId", "fullName", "phone", "consentGiven",
+        "currentStep", "educationCompleted", "assessmentCompleted",
+        "contactDownloaded", "contactConfirmed", "whatsappClicked",
+        "communityConfirmed", "ebookUnlocked", "ebookOpened", "ebookDownloaded",
+        "createdAt", "updatedAt"
+      ]
+    },
+    "Assessment": {
+      "title": "Assessment",
+      "description": "A visitor's completed interactive health assessment answers.",
+      "type": "object",
+      "properties": {
+        "leadId": { "type": "string", "minLength": 8, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "campaignId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "upperAbdominalDiscomfort": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "heartburn": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "acidRegurgitation": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "symptomFrequency": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "symptomDuration": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "priorMedicalAssessment": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "wantsMoreEducation": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "hasWarningSigns": { "type": "boolean" },
+        "consentGiven": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "leadId", "campaignId", "upperAbdominalDiscomfort", "heartburn",
+        "acidRegurgitation", "symptomFrequency", "symptomDuration",
+        "priorMedicalAssessment", "wantsMoreEducation", "hasWarningSigns",
+        "consentGiven", "createdAt"
+      ]
+    },
+    "FunnelEvent": {
+      "title": "FunnelEvent",
+      "description": "Immutable analytics tracking event across the 13 funnel milestones.",
+      "type": "object",
+      "properties": {
+        "sessionId": { "type": "string", "minLength": 8, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "campaignId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "eventType": {
+          "type": "string",
+          "enum": [
+            "landing_page_viewed",
+            "welcome_started",
+            "education_started",
+            "education_completed",
+            "assessment_started",
+            "assessment_completed",
+            "contact_card_downloaded",
+            "contact_save_confirmed",
+            "whatsapp_invitation_clicked",
+            "community_join_confirmed",
+            "ebook_unlocked",
+            "ebook_opened",
+            "ebook_downloaded"
+          ]
+        },
+        "ebookId": { "type": "string", "maxLength": 128 },
+        "consentGranted": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["sessionId", "campaignId", "eventType", "consentGranted", "createdAt"]
+    },
+    "PublicSettings": {
+      "title": "PublicSettings",
+      "description": "Publicly readable brand, contact card, WhatsApp community, and Meta Pixel configuration.",
+      "type": "object",
+      "properties": {
+        "brandName": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "presenterName": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "contactName": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "contactPhone": { "type": "string", "minLength": 1, "maxLength": 40 },
+        "contactPhoneIntl": { "type": "string", "minLength": 1, "maxLength": 40 },
+        "whatsappNumber": { "type": "string", "minLength": 1, "maxLength": 40 },
+        "contactOrganization": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "contactNote": { "type": "string", "maxLength": 500 },
+        "communityName": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "communityMessage": { "type": "string", "minLength": 1, "maxLength": 1000 },
+        "whatsappCommunityLink": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "metaPixelId": { "type": "string", "maxLength": 64 },
+        "logoUrl": { "type": "string", "maxLength": 1000 },
+        "welcomeImageUrl": { "type": "string", "maxLength": 1000 },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "brandName", "presenterName", "contactName", "contactPhone",
+        "contactPhoneIntl", "whatsappNumber", "contactOrganization",
+        "communityName", "communityMessage", "whatsappCommunityLink", "updatedAt"
+      ]
+    },
+    "AdminUser": {
+      "title": "AdminUser",
+      "description": "Authorized administrator registry.",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "minLength": 3, "maxLength": 200 },
+        "role": { "type": "string", "enum": ["admin", "super_admin"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["email", "role", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/campaigns/{campaignId}": {
+      "schema": { "$ref": "#/entities/Campaign" },
+      "description": "Campaign configurations linking educational topics and eBooks."
+    },
+    "/slides/{slideId}": {
+      "schema": { "$ref": "#/entities/EducationalSlide" },
+      "description": "Educational slides displayed in Step 2 carousel."
+    },
+    "/ebooks/{ebookId}": {
+      "schema": { "$ref": "#/entities/Ebook" },
+      "description": "Uploaded PDF eBook metadata records."
+    },
+    "/leads/{leadId}": {
+      "schema": { "$ref": "#/entities/Lead" },
+      "description": "Visitor leads and funnel completion tracking (admin-only reads)."
+    },
+    "/assessments/{assessmentId}": {
+      "schema": { "$ref": "#/entities/Assessment" },
+      "description": "Interactive health assessment responses (admin-only reads)."
+    },
+    "/funnel_events/{eventId}": {
+      "schema": { "$ref": "#/entities/FunnelEvent" },
+      "description": "Append-only funnel analytics events (admin-only reads)."
+    },
+    "/settings/{settingId}": {
+      "schema": { "$ref": "#/entities/PublicSettings" },
+      "description": "Application contact, community, and pixel configuration."
+    },
+    "/admins/{adminId}": {
+      "schema": { "$ref": "#/entities/AdminUser" },
+      "description": "Authorized admin users."
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "JOS HEALTH KNOWLEDGE HUB",
+  "description": "Mfumo wa kisasa wa elimu ya afya ya mfumo wa chakula (Vidonda vya Tumbo na Acid Reflux) kutoka Dr. Revo • JOS NATURAL HERBS.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
